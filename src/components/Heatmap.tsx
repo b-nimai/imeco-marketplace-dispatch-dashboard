@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import {
   Table,
   TableBody,
@@ -9,7 +11,7 @@ import {
 import { GROUPS, OTHER_KEY, OTHER_LABEL, type HeatmapColumnKey } from '@/data/channels';
 import { formatPct, formatShort, formatUnits } from '@/data/format';
 import type { HeatmapRow, HeatmapScope } from '@/data/parseSheet';
-import { INK, fill, median, position } from '@/lib/heatmapScale';
+import { INK, domain, fill, position } from '@/lib/heatmapScale';
 import { cn } from '@/lib/utils';
 
 const COLUMNS: { key: HeatmapColumnKey; label: string; muted?: boolean }[] = [
@@ -20,8 +22,8 @@ const COLUMNS: { key: HeatmapColumnKey; label: string; muted?: boolean }[] = [
 const GROUP_KEYS = GROUPS.map((g) => g.key as HeatmapColumnKey);
 const ALL_KEYS = COLUMNS.map((c) => c.key);
 
-/** Shared cell chrome, so the totals row and the product rows can never drift apart. */
-function shadedCell(value: number, mid: number, max: number) {
+/** Shared cell chrome, so no two cells can drift apart on how a value is drawn. */
+function shadedCell(value: number, sorted: number[]) {
   if (value <= 0) {
     return {
       className: 'text-muted-foreground/30',
@@ -32,7 +34,7 @@ function shadedCell(value: number, mid: number, max: number) {
   }
   return {
     className: '',
-    style: { backgroundColor: fill(position(value, mid, max)), color: INK },
+    style: { backgroundColor: fill(position(value, sorted)), color: INK },
     text: formatShort(value),
   };
 }
@@ -61,6 +63,14 @@ export function Heatmap({ scope, rows }: Props) {
   // unanswerable for this month rather than merely zero — leave it out of the row statistics
   // so it cannot drag the colour scale toward zero.
   const shadedKeys = scope.hasOther ? ALL_KEYS : GROUP_KEYS;
+
+  // The scale's domain is every filled cell on screen, so the same number is the same colour
+  // wherever it appears. Built from the rows actually rendered: hiding the empty products or
+  // switching month changes what "large" means, and the colours should follow.
+  const sorted = useMemo(
+    () => domain(rows.flatMap((row) => shadedKeys.map((k) => row.cells[k]))),
+    [rows, shadedKeys],
+  );
 
   return (
     // The height has to land on the table's own container — that div carries `overflow-x-auto`,
@@ -112,9 +122,8 @@ export function Heatmap({ scope, rows }: Props) {
             ))}
           </TableRow>
 
-          {/* Channel totals. Shaded on their own scale, so the channel ranking reads at a
-              glance the same way each product's mix does. The underline is load-bearing:
-              without it this row reads as just another product and the totals look missing. */}
+          {/* Channel totals. The underline is load-bearing: without it this row reads as just
+              another product and the totals look missing. */}
           <TableRow className="hover:bg-transparent">
             <TableCell
               className={cn(
@@ -140,9 +149,9 @@ export function Heatmap({ scope, rows }: Props) {
               return (
                 <TableCell
                   key={c.key}
-                  // Deliberately unshaded. The ramp means "share within this row", and these
-                  // are column totals — colouring them invites reading a green here as the
-                  // same statement a green in the grid makes, which it is not.
+                  // Deliberately unshaded. The ramp ranks single cells, and a column total is
+                  // a sum of hundreds of them — every one of these would peg green and say
+                  // nothing, while implying it means what a green in the grid means.
                   className={cn(
                     'sticky top-7 z-20 border-b-2 border-primary/40 bg-card px-2 py-1.5 text-center font-mono text-[13px] font-bold tabular-nums',
                     value > 0 ? 'text-foreground' : 'text-muted-foreground/30',
@@ -161,60 +170,55 @@ export function Heatmap({ scope, rows }: Props) {
         </TableHeader>
 
         <TableBody>
-          {rows.map((row) => {
-            const values = shadedKeys.map((k) => row.cells[k]);
-            const rowMax = Math.max(...values);
-            const rowMid = median(values);
-            return (
-              <TableRow key={row.sku.id} className="hover:bg-transparent">
-                <TableCell
-                  className={cn(
-                    'sticky left-0 z-10 truncate bg-card py-0.5 text-[12px] font-medium text-foreground',
-                    NAME_W,
-                  )}
-                  title={`${row.sku.sheetName} · ${row.sku.id}`}
-                >
-                  {row.sku.name}
-                </TableCell>
+          {rows.map((row) => (
+            <TableRow key={row.sku.id} className="hover:bg-transparent">
+              <TableCell
+                className={cn(
+                  'sticky left-0 z-10 truncate bg-card py-0.5 text-[12px] font-medium text-foreground',
+                  NAME_W,
+                )}
+                title={`${row.sku.sheetName} · ${row.sku.id}`}
+              >
+                {row.sku.name}
+              </TableCell>
 
-                <TableCell
-                  className={cn(
-                    'sticky z-10 bg-card py-0.5 text-right font-mono text-[12px] font-semibold tabular-nums text-foreground',
-                    TOTAL_LEFT,
-                    TOTAL_W,
-                  )}
-                >
-                  {formatUnits(row.rowTotal)}
-                </TableCell>
+              <TableCell
+                className={cn(
+                  'sticky z-10 bg-card py-0.5 text-right font-mono text-[12px] font-semibold tabular-nums text-foreground',
+                  TOTAL_LEFT,
+                  TOTAL_W,
+                )}
+              >
+                {formatUnits(row.rowTotal)}
+              </TableCell>
 
-                {COLUMNS.map((c) => {
-                  const unanswerable = !scope.hasOther && c.key === OTHER_KEY;
-                  const value = unanswerable ? 0 : row.cells[c.key];
-                  const cell = shadedCell(value, rowMid, rowMax);
-                  const share = row.rowTotal > 0 ? value / row.rowTotal : 0;
-                  return (
-                    <TableCell
-                      key={c.key}
-                      className={cn(
-                        'rounded-[3px] px-2 py-0.5 text-center font-mono text-[12px] tabular-nums transition-colors',
-                        cell.className,
-                      )}
-                      style={cell.style}
-                      title={
-                        unanswerable
-                          ? `${row.sku.name} → ${c.label}: no dated tab for these channels — All time tab only`
-                          : value > 0
-                            ? `${row.sku.name} → ${c.label}: ${formatUnits(value)} units (${formatPct(share)} of this product)`
-                            : `${row.sku.name} → ${c.label}: none`
-                      }
-                    >
-                      {cell.text}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            );
-          })}
+              {COLUMNS.map((c) => {
+                const unanswerable = !scope.hasOther && c.key === OTHER_KEY;
+                const value = unanswerable ? 0 : row.cells[c.key];
+                const cell = shadedCell(value, sorted);
+                const share = row.rowTotal > 0 ? value / row.rowTotal : 0;
+                return (
+                  <TableCell
+                    key={c.key}
+                    className={cn(
+                      'rounded-[3px] px-2 py-0.5 text-center font-mono text-[12px] tabular-nums transition-colors',
+                      cell.className,
+                    )}
+                    style={cell.style}
+                    title={
+                      unanswerable
+                        ? `${row.sku.name} → ${c.label}: no dated tab for these channels — All time tab only`
+                        : value > 0
+                          ? `${row.sku.name} → ${c.label}: ${formatUnits(value)} units (${formatPct(share)} of this product)`
+                          : `${row.sku.name} → ${c.label}: none`
+                    }
+                  >
+                    {cell.text}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>

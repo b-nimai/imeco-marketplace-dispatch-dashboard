@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import logoVideo from '@/assets/imeco_logo_2.mp4';
+import logoVideo from '@/assets/imeco_logo_3.mp4';
 import { cn } from '@/lib/utils';
 
 /**
@@ -18,34 +18,35 @@ import { cn } from '@/lib/utils';
  *    screen` is what makes that black drop away against the dark header: screen leaves
  *    black untouched and keeps the light wordmark, so no letterbox shows.
  *
- * 3. THE CLIP IS AN IN-AND-OUT, AND ENDS EMPTY. Particles blow in, the mark assembles by
- *    t≈4s, holds dead still at 672×228 from t=4.6 to 6.8, then dissolves back into smoke —
- *    the final frame carries no logo at all. Measured per frame at 0.2s steps, filtering
- *    out the smoke by requiring a column to carry ≥10 bright pixels: a letter stroke does,
- *    a particle trail does not.
+ * 3. THE CLIP IS AN IN-AND-OUT, AND ENDS EMPTY. Particles blow in, the mark is legible from
+ *    t≈3.8s at 720×212, eases down to a stationary 659×193 by t=6, holds there to ≈8.6s,
+ *    then dissolves back into smoke — the final frame carries no logo at all. Measured per
+ *    frame at 0.2s steps, filtering out the smoke by requiring a column to carry ≥10 bright
+ *    pixels: a letter stroke does, a particle trail does not.
  *
- *    Two things follow. The crop is the UNION over the hold window (4.0–7.4s) rather than
- *    any single frame, so the mark is never cut while it is legible. And the
+ *    Two things follow. The crop is the UNION over the whole legible window (3.8–8.6s)
+ *    rather than any single frame, so no letter is ever cut while the mark is up; the cost
+ *    is that the settled mark sits at ~89% of the box height instead of filling it. And the
  *    reduced-motion path parks on HOLD_FRAME instead of the end, which would otherwise
  *    leave an empty box.
  *
- *    The clip loops in full, all 10s, so the mark is present for roughly four seconds of
+ *    The clip loops in full, all 10s, so the mark is present for roughly five seconds of
  *    every ten and the rest is smoke sweeping past. That is the asset's own rhythm; the
  *    plume ranges far wider than any crop that keeps the wordmark legible could contain,
  *    so it clips at the edges by design.
  */
 
 /**
- * Union of the wordmark's bounds across the hold window. Cropping to this is what
+ * Union of the wordmark's bounds across the legible window. Cropping to this is what
  * guarantees no letter is ever clipped while the mark is up.
  *
  * RE-MEASURE THESE IF THE SOURCE CLIP IS REPLACED — they are specific to the file, and a
  * swap silently mis-frames the logo otherwise.
  */
-const MARK = { x: 342, y: 202, w: 680, h: 236 };
+const MARK = { x: 294, y: 239, w: 720, h: 217 };
 const FRAME = { w: 1280, h: 720 };
 /** Mid-hold, where the mark is fully formed and stationary. */
-const HOLD_FRAME = 5.5;
+const HOLD_FRAME = 6.4;
 
 /**
  * Breathing room either side, in source pixels, so the mark is not flush against the crop.
@@ -77,8 +78,8 @@ const CROP = {
  */
 const BOX_H = 43;
 const BOX_W = Math.round((BOX_H * CROP.w) / CROP.h);
-/** Same aspect at both sizes (3.19:1); the phone/tablet box is simply smaller. */
-const BOX_CLASS = 'h-[32px] w-[102px] lg:h-[43px] lg:w-[137px]';
+/** Same aspect at both sizes (3.65:1); the phone/tablet box is simply smaller. */
+const BOX_CLASS = 'h-[32px] w-[117px] lg:h-[43px] lg:w-[157px]';
 
 const scale = BOX_H / CROP.h;
 const cropCentre = { x: CROP.x + CROP.w / 2, y: CROP.y + CROP.h / 2 };

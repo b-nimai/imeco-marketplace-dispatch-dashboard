@@ -1,13 +1,13 @@
 import { RefreshCw } from 'lucide-react';
 
 import { LiveClock } from '@/components/LiveClock';
+import { LogoMark } from '@/components/LogoMark';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { formatAgo, formatShort } from '@/data/format';
 import type { HeatmapScope } from '@/data/parseSheet';
-import logo from '@/assets/imeco_logo_white.png';
 
 interface Props {
   scopes: HeatmapScope[];
@@ -45,8 +45,8 @@ export function Header({
   return (
     <header className="card-glass flex flex-none flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border px-4 py-2.5">
       <div className="flex items-center gap-3">
-        {/* The mark is 2400×752 — roughly 3.2:1. A square icon button clipped it, so the
-            button sizes to the artwork instead of the other way round. */}
+        {/* The button hugs the artwork rather than the other way round — a square icon button
+            clipped it, and any padding here would cost the mark height it cannot spare. */}
         <Button
           variant="ghost"
           size="icon"
@@ -54,13 +54,11 @@ export function Header({
           disabled={syncing}
           title="Refresh from the sheet"
           aria-label="Refresh data from the sheet"
-          className="h-8 w-auto shrink-0 px-2"
+          // `border-0` matters: the base `*` rule gives every element a border, and those
+          // two sub-pixel edges are enough to push the whole header taller.
+          className="h-auto w-auto shrink-0 border-0 p-0"
         >
-          <img
-            src={logo}
-            alt="IMECO"
-            className={syncing ? 'h-5 w-auto animate-pulse' : 'h-5 w-auto'}
-          />
+          <LogoMark syncing={syncing} />
         </Button>
         <div className="hidden h-7 w-px bg-border sm:block" />
         <div>

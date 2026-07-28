@@ -10,8 +10,11 @@ export const LOW = '#f8696b';
 export const MID = '#ffeb84';
 export const HIGH = '#63be7b';
 
-/** Every filled cell is a light pastel, so ink is dark unconditionally. */
-export const INK = '#08181a';
+/**
+ * Every filled cell is a light pastel, so ink is dark unconditionally. Neutral, not tinted:
+ * it tracks the page's own surface family, which is now black rather than teal.
+ */
+export const INK = '#0a0a0a';
 
 /**
  * The sorted list of every filled cell in the grid — the scale's domain.

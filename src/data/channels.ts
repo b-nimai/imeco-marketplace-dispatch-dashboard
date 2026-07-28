@@ -11,7 +11,8 @@
 // Two things have changed since, and neither invalidates the ordering — but know them:
 //   • The timeline is gone, so nothing renders these as adjacent fills any more. The only
 //     consumer left is the KPI "Top channel" accent, one line of bold text.
-//   • The card surface moved from navy #0a1628 to teal #0c262b.
+//   • The card surface moved from navy #0a1628 to teal #0c262b and then to a neutral #111111
+//     on a black page — a lighter surface than the one validated against.
 // Re-run the validator against the current surface before using these as fills again.
 //
 // Brand-matching the hues (Meesho magenta, Blinkit yellow…) was tried and FAILS: it puts

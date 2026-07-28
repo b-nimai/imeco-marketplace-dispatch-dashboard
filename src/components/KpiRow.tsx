@@ -21,16 +21,16 @@ function Tile({
     // is ~30px of wall display per tile handed back to the grid.
     <Card size="sm" className="card-glass gap-0 bg-transparent py-2">
       <div className="px-3">
-        <div className="eyebrow text-[10px]">{label}</div>
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <div className="eyebrow text-[12px]">{label}</div>
+        <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span
-            className="text-xl leading-none font-bold text-foreground"
+            className="text-[28px] leading-none font-bold text-foreground"
             style={accent ? { color: accent } : undefined}
           >
             {value}
           </span>
           {note && (
-            <span className="text-[10px] leading-none text-muted-foreground">{note}</span>
+            <span className="text-[12px] leading-none text-muted-foreground">{note}</span>
           )}
         </div>
       </div>

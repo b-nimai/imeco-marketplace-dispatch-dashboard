@@ -64,12 +64,12 @@ export function Header({
         <div>
           {/* The wide tracking is what pushed the title onto two lines on a phone, taking
               the header to 171px. Tightened below `sm` only. */}
-          <h1 className="text-sm font-black tracking-[0.08em] text-foreground uppercase sm:text-base sm:tracking-[0.2em]">
+          <h1 className="text-base font-black tracking-[0.08em] text-foreground uppercase sm:text-xl sm:tracking-[0.2em]">
             Marketplace Dispatch
           </h1>
           <div className="mt-1 flex items-center gap-2">
             <span className="pulse-dot" aria-hidden />
-            <span className="text-[10px] font-bold tracking-widest text-primary uppercase">
+            <span className="text-[11px] font-bold tracking-widest text-primary uppercase">
               Outbound Tracker
             </span>
           </div>
@@ -85,7 +85,7 @@ export function Header({
         />
 
         {zeroCount > 0 && (
-          <label className="flex cursor-pointer items-center gap-2 text-[10px] tracking-widest text-muted-foreground uppercase">
+          <label className="flex cursor-pointer items-center gap-2 text-[11px] tracking-widest text-muted-foreground uppercase">
             <Switch checked={showZero} onCheckedChange={onShowZeroChange} />
             Show {zeroCount} zero
           </label>
@@ -96,7 +96,7 @@ export function Header({
             Cached — {error}
           </Badge>
         ) : (
-          <span className="hidden items-center gap-1.5 text-[10px] tracking-widest text-muted-foreground uppercase md:flex">
+          <span className="hidden items-center gap-1.5 text-[11px] tracking-widest text-muted-foreground uppercase md:flex">
             <RefreshCw className={syncing ? 'size-3 animate-spin' : 'size-3'} aria-hidden />
             {syncing ? 'Syncing' : fetchedAt ? `Synced ${formatAgo(fetchedAt)}` : '—'}
           </span>

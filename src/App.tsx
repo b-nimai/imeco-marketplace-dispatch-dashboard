@@ -28,7 +28,11 @@ export function App() {
   const { data, fetchedAt, syncing, error, refresh } = useDispatchData();
   // null = follow the default. An explicit pick sticks until the operator changes it.
   const [picked, setPicked] = useState<string | null>(null);
-  const [showZero, setShowZero] = useState(false);
+  // On by default: this is a wall display, so the screen has to show the whole catalogue
+  // without anyone walking over to flip a switch — and `useKioskMode` reloads every 6 hours,
+  // which would undo the flip anyway. A product dispatching nothing this month is itself the
+  // signal. The toggle survives as a way to NARROW the grid, not to widen it.
+  const [showZero, setShowZero] = useState(true);
 
   useKioskMode();
 

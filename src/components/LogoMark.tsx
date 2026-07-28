@@ -68,18 +68,20 @@ const CROP = {
 /**
  * Height is the hard constraint, width is free.
  *
- * 43px is exactly as tall as the title block sitting next to it, which is what sets the
+ * 48px is exactly as tall as the title block sitting next to it, which is what sets the
  * header's height — so the box fills the bar completely without making it one pixel taller.
- * Width then follows from the crop's own aspect rather than being chosen and cropped to.
+ * (It was 43px until the title grew for TV legibility; re-measure it if the title moves
+ * again, or the mark starts reading as undersized next to the words.) Width then follows
+ * from the crop's own aspect rather than being chosen and cropped to.
  *
  * The box shrinks on phones (see BOX_CLASS), which is why the video is positioned in
  * PERCENTAGES of the box below rather than pixels: the framing then follows whatever size
  * the box happens to be, and there is only one set of numbers to keep correct.
  */
-const BOX_H = 43;
+const BOX_H = 48;
 const BOX_W = Math.round((BOX_H * CROP.w) / CROP.h);
 /** Same aspect at both sizes (3.65:1); the phone/tablet box is simply smaller. */
-const BOX_CLASS = 'h-[32px] w-[117px] lg:h-[43px] lg:w-[157px]';
+const BOX_CLASS = 'h-[32px] w-[117px] lg:h-[48px] lg:w-[175px]';
 
 const scale = BOX_H / CROP.h;
 const cropCentre = { x: CROP.x + CROP.w / 2, y: CROP.y + CROP.h / 2 };

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { type CSSProperties, useMemo } from 'react';
 
 import {
   Table,
@@ -11,6 +11,7 @@ import {
 import { GROUPS, OTHER_KEY, OTHER_LABEL, type HeatmapColumnKey } from '@/data/channels';
 import { formatPct, formatShort, formatUnits } from '@/data/format';
 import type { HeatmapRow, HeatmapScope } from '@/data/parseSheet';
+import { useGridFit } from '@/hooks/useGridFit';
 import { INK, domain, fill, position } from '@/lib/heatmapScale';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +27,7 @@ const ALL_KEYS = COLUMNS.map((c) => c.key);
 function shadedCell(value: number, sorted: number[]) {
   if (value <= 0) {
     return {
-      className: 'text-muted-foreground/30',
+      className: 'text-muted-foreground/60',
       // A hairline keeps the grid legible where there is no fill to carry it.
       style: { boxShadow: 'inset 0 0 0 1px var(--border)' } as const,
       text: '·',
@@ -40,17 +41,40 @@ function shadedCell(value: number, sorted: number[]) {
 }
 
 /**
- * 20rem is wide enough for the longest display name (47 chars) without an ellipsis. On a
- * phone that is the entire viewport, which left no room at all for the data, so below `lg`
- * the column narrows to 10rem and names fall back to their `truncate` + tooltip.
+ * 27rem is wide enough for the longest display name — "Imeco Bamboo Facial Pocket Tissue
+ * (10Pulls x 10)", 47 chars, measured at 418px semibold at the 17px the grid reaches on a TV
+ * — without an ellipsis, with a little headroom. MEASURE IT AGAIN if the type grows or a
+ * longer name is added; the only symptom is a quietly truncated row.
  *
- * The switch is at `lg`, not `md`: on a tablet the wide name column would eat 320 of ~700px
- * and squeeze the channels to 49px, narrower than the 69px they get here.
+ * On a phone that is more than the entire viewport, which left no room at all for the data,
+ * so below `lg` the column narrows to 10rem and names fall back to their `truncate` +
+ * tooltip. The switch is at `lg`, not `md`: on a tablet the wide name column would eat 432 of
+ * ~700px and squeeze the channels to 38px, narrower than the 69px they get here.
  */
-const NAME_W = 'w-[10rem] min-w-[10rem] max-w-[10rem] lg:w-[20rem] lg:min-w-[20rem] lg:max-w-[20rem]';
-const TOTAL_W = 'w-[5.5rem] min-w-[5.5rem]';
+const NAME_W = 'w-[10rem] min-w-[10rem] max-w-[10rem] lg:w-[27rem] lg:min-w-[27rem] lg:max-w-[27rem]';
+const TOTAL_W = 'w-[5.5rem] min-w-[5.5rem] lg:w-[7rem] lg:min-w-[7rem]';
 /** Sticky offset for the Total column = the name column plus one border-spacing step. */
-const TOTAL_LEFT = 'left-[10.25rem] lg:left-[20.25rem]';
+const TOTAL_LEFT = 'left-[10.25rem] lg:left-[27.25rem]';
+
+/**
+ * Every type size in the grid is a multiple of `--grid-font`, the px value `useGridFit`
+ * measures for the box the card was given — see src/lib/gridFit.ts for why it is measured
+ * rather than fixed. The ratios are what used to be 11/12/13px, kept in proportion.
+ *
+ * The explicit `leading` is load-bearing, not tidiness: `Table` carries `text-sm`, whose
+ * 20px line-height would otherwise pin every line box regardless of the font size, so the
+ * rows would not shrink or grow with the type and the fit would be computed against a height
+ * the grid does not really occupy. gridFit.ts hardcodes this 1.15 — change both together.
+ *
+ * HEAD_H and TOTALS_TOP must stay identical: the totals row is welded under the header by a
+ * sticky offset equal to the header's height, and they were both a hardcoded 28px before
+ * this. If they drift, the totals row floats or slides underneath as the grid scrolls.
+ */
+const CELL_TEXT = 'text-[length:var(--grid-font)] leading-[1.15]';
+const HEAD_TEXT = 'text-[length:calc(var(--grid-font)*0.85)]';
+const TOTALS_TEXT = 'text-[length:calc(var(--grid-font)*1.05)] leading-[1.15]';
+const HEAD_H = 'h-[calc(var(--grid-font)*2)]';
+const TOTALS_TOP = 'top-[calc(var(--grid-font)*2)]';
 
 interface Props {
   scope: HeatmapScope;
@@ -72,11 +96,19 @@ export function Heatmap({ scope, rows }: Props) {
     [rows, shadedKeys],
   );
 
+  // The type is sized to the box, not fixed: with every product on screen and nobody at the
+  // TV to scroll, the grid has to be as large as it can be while still fitting.
+  const [fitRef, fontPx] = useGridFit(rows.length);
+
   return (
     // The height has to land on the table's own container — that div carries `overflow-x-auto`,
     // which makes it the scrollport, and sticky rows/columns only stick inside a scrollport
     // that is actually bounded.
-    <div className="h-full min-h-0 [&>[data-slot=table-container]]:h-full">
+    <div
+      ref={fitRef}
+      className="h-full min-h-0 [&>[data-slot=table-container]]:h-full"
+      style={{ '--grid-font': `${fontPx}px` } as CSSProperties}
+    >
       {/* `h-full` fills a wall display: rows are compact by nature, and the browser hands the
           leftover height back to them rather than leaving a band of empty card at the bottom.
           On a short viewport they keep their natural height and the container scrolls instead.
@@ -96,13 +128,20 @@ export function Heatmap({ scope, rows }: Props) {
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead
-              className={cn('eyebrow sticky top-0 left-0 z-30 h-7 bg-card text-left', NAME_W)}
+              className={cn(
+                'eyebrow sticky top-0 left-0 z-30 bg-card text-left',
+                HEAD_TEXT,
+                HEAD_H,
+                NAME_W,
+              )}
             >
               Product
             </TableHead>
             <TableHead
               className={cn(
-                'eyebrow sticky top-0 z-30 h-7 bg-card text-right',
+                'eyebrow sticky top-0 z-30 bg-card text-right',
+                HEAD_TEXT,
+                HEAD_H,
                 TOTAL_LEFT,
                 TOTAL_W,
               )}
@@ -113,7 +152,9 @@ export function Heatmap({ scope, rows }: Props) {
               <TableHead
                 key={c.key}
                 className={cn(
-                  'eyebrow sticky top-0 z-20 h-7 bg-card text-center whitespace-nowrap',
+                  'eyebrow sticky top-0 z-20 bg-card text-center whitespace-nowrap',
+                  HEAD_TEXT,
+                  HEAD_H,
                   c.muted && 'opacity-50',
                 )}
               >
@@ -127,7 +168,9 @@ export function Heatmap({ scope, rows }: Props) {
           <TableRow className="hover:bg-transparent">
             <TableCell
               className={cn(
-                'eyebrow sticky top-7 left-0 z-30 border-b-2 border-primary/40 bg-card py-1.5 text-foreground',
+                'eyebrow sticky left-0 z-30 border-b-2 border-primary/40 bg-card py-1.5 text-foreground',
+                HEAD_TEXT,
+                TOTALS_TOP,
                 NAME_W,
               )}
             >
@@ -135,7 +178,9 @@ export function Heatmap({ scope, rows }: Props) {
             </TableCell>
             <TableCell
               className={cn(
-                'sticky top-7 z-30 border-b-2 border-primary/40 bg-card py-1.5 text-right font-mono text-[13px] font-bold tabular-nums text-foreground',
+                'sticky z-30 border-b-2 border-primary/40 bg-card py-1.5 text-right font-mono font-bold tabular-nums text-foreground',
+                TOTALS_TEXT,
+                TOTALS_TOP,
                 TOTAL_LEFT,
                 TOTAL_W,
               )}
@@ -153,8 +198,10 @@ export function Heatmap({ scope, rows }: Props) {
                   // a sum of hundreds of them — every one of these would peg green and say
                   // nothing, while implying it means what a green in the grid means.
                   className={cn(
-                    'sticky top-7 z-20 border-b-2 border-primary/40 bg-card px-2 py-1.5 text-center font-mono text-[13px] font-bold tabular-nums',
-                    value > 0 ? 'text-foreground' : 'text-muted-foreground/30',
+                    'sticky z-20 border-b-2 border-primary/40 bg-card px-2 py-1.5 text-center font-mono font-bold tabular-nums',
+                    TOTALS_TEXT,
+                    TOTALS_TOP,
+                    value > 0 ? 'text-foreground' : 'text-muted-foreground/60',
                   )}
                   title={
                     value > 0
@@ -174,7 +221,8 @@ export function Heatmap({ scope, rows }: Props) {
             <TableRow key={row.sku.id} className="hover:bg-transparent">
               <TableCell
                 className={cn(
-                  'sticky left-0 z-10 truncate bg-card py-0.5 text-[12px] font-medium text-foreground',
+                  'sticky left-0 z-10 truncate bg-card py-1 font-semibold text-foreground',
+                  CELL_TEXT,
                   NAME_W,
                 )}
                 title={`${row.sku.sheetName} · ${row.sku.id}`}
@@ -184,7 +232,8 @@ export function Heatmap({ scope, rows }: Props) {
 
               <TableCell
                 className={cn(
-                  'sticky z-10 bg-card py-0.5 text-right font-mono text-[12px] font-semibold tabular-nums text-foreground',
+                  'sticky z-10 bg-card py-1 text-right font-mono font-bold tabular-nums text-foreground',
+                  CELL_TEXT,
                   TOTAL_LEFT,
                   TOTAL_W,
                 )}
@@ -201,7 +250,8 @@ export function Heatmap({ scope, rows }: Props) {
                   <TableCell
                     key={c.key}
                     className={cn(
-                      'rounded-[3px] px-2 py-0.5 text-center font-mono text-[12px] tabular-nums transition-colors',
+                      'rounded-[3px] px-2 py-1 text-center font-mono font-semibold tabular-nums transition-colors',
+                      CELL_TEXT,
                       cell.className,
                     )}
                     style={cell.style}

@@ -47,7 +47,8 @@ export function SegmentedControl<T extends string>({
           key={o.value}
           value={o.value}
           aria-label={o.hint ? `${o.label} — ${o.hint}` : o.label}
-          className="px-2.5 text-[11px] font-bold tracking-widest uppercase data-[pressed]:bg-primary/15 data-[pressed]:text-primary"
+          // `h-8` overrides the size="sm" pill's own h-7, which clipped the larger type.
+          className="h-8 px-2.5 text-[13px] font-bold tracking-widest uppercase data-[pressed]:bg-primary/15 data-[pressed]:text-primary"
         >
           {o.label}
           {o.hint && (

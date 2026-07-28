@@ -41,20 +41,21 @@ function shadedCell(value: number, sorted: number[]) {
 }
 
 /**
- * 27rem is wide enough for the longest display name — "Imeco Bamboo Facial Pocket Tissue
- * (10Pulls x 10)", 47 chars, measured at 418px semibold at the 17px the grid reaches on a TV
- * — without an ellipsis, with a little headroom. MEASURE IT AGAIN if the type grows or a
- * longer name is added; the only symptom is a quietly truncated row.
+ * The two pinned columns are sized from `--name-w` / `--total-w`, both computed in the
+ * component. Read the note there before changing these — the widths are a `min()` of a type
+ * multiple AND a share of the viewport, and the second half is what stops the grid breaking.
  *
- * On a phone that is more than the entire viewport, which left no room at all for the data,
- * so below `lg` the column narrows to 10rem and names fall back to their `truncate` +
- * tooltip. The switch is at `lg`, not `md`: on a tablet the wide name column would eat 432 of
- * ~700px and squeeze the channels to 38px, narrower than the 69px they get here.
+ * Below `lg` it all collapses to a fixed 10rem: on a phone a proportional column would be the
+ * entire viewport and leave no room at all for the data, so names fall back to their
+ * `truncate` + tooltip. The switch is at `lg`, not `md`, because on a tablet the wide column
+ * would leave the channels nothing.
  */
-const NAME_W = 'w-[10rem] min-w-[10rem] max-w-[10rem] lg:w-[27rem] lg:min-w-[27rem] lg:max-w-[27rem]';
-const TOTAL_W = 'w-[5.5rem] min-w-[5.5rem] lg:w-[7rem] lg:min-w-[7rem]';
+const NAME_W =
+  'w-[10rem] min-w-[10rem] max-w-[10rem] lg:w-[var(--name-w)] lg:min-w-[var(--name-w)] lg:max-w-[var(--name-w)]';
+const TOTAL_W =
+  'w-[5.5rem] min-w-[5.5rem] lg:w-[var(--total-w)] lg:min-w-[var(--total-w)]';
 /** Sticky offset for the Total column = the name column plus one border-spacing step. */
-const TOTAL_LEFT = 'left-[10.25rem] lg:left-[27.25rem]';
+const TOTAL_LEFT = 'left-[10.25rem] lg:left-[calc(var(--name-w)+2px)]';
 
 /**
  * Every type size in the grid is a multiple of `--grid-font`, the px value `useGridFit`
@@ -71,8 +72,8 @@ const TOTAL_LEFT = 'left-[10.25rem] lg:left-[27.25rem]';
  * this. If they drift, the totals row floats or slides underneath as the grid scrolls.
  */
 const CELL_TEXT = 'text-[length:var(--grid-font)] leading-[1.15]';
-const HEAD_TEXT = 'text-[length:calc(var(--grid-font)*0.85)]';
-const TOTALS_TEXT = 'text-[length:calc(var(--grid-font)*1.05)] leading-[1.15]';
+const HEAD_TEXT = 'text-[length:calc(var(--grid-font)*0.9)]';
+const TOTALS_TEXT = 'text-[length:calc(var(--grid-font)*1.1)] leading-[1.15]';
 const HEAD_H = 'h-[calc(var(--grid-font)*2)]';
 const TOTALS_TOP = 'top-[calc(var(--grid-font)*2)]';
 
@@ -107,7 +108,24 @@ export function Heatmap({ scope, rows }: Props) {
     <div
       ref={fitRef}
       className="h-full min-h-0 [&>[data-slot=table-container]]:h-full"
-      style={{ '--grid-font': `${fontPx}px` } as CSSProperties}
+      // The pinned columns want to scale with the type — a 47-char name needs 23.7x the font
+      // size, so 25x fits it without an ellipsis. But the type is measured from the grid's
+      // HEIGHT and a column is spent out of its WIDTH, and those two are independent: on a
+      // screen that is tall relative to its width (a 4K panel, a portrait-ish window) 25x the
+      // font is most of the viewport, the seven channel columns collapse, and the table blows
+      // straight through its container.
+      //
+      // So each is a `min()` of the two axes. The type multiple keeps names intact at normal
+      // aspect ratios; the vw share is the guarantee — the two pinned columns can never take
+      // more than a third of the screen, which leaves the channels the other two thirds no
+      // matter what the fit function returns.
+      style={
+        {
+          '--grid-font': `${fontPx}px`,
+          '--name-w': `min(${fontPx * 25}px, 26vw)`,
+          '--total-w': `min(${fontPx * 6}px, 7vw)`,
+        } as CSSProperties
+      }
     >
       {/* `h-full` fills a wall display: rows are compact by nature, and the browser hands the
           leftover height back to them rather than leaving a band of empty card at the bottom.
@@ -250,7 +268,7 @@ export function Heatmap({ scope, rows }: Props) {
                   <TableCell
                     key={c.key}
                     className={cn(
-                      'rounded-[3px] px-2 py-1 text-center font-mono font-semibold tabular-nums transition-colors',
+                      'rounded-[3px] px-2 py-1 text-center font-mono font-bold tabular-nums transition-colors',
                       CELL_TEXT,
                       cell.className,
                     )}

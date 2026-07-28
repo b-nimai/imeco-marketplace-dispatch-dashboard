@@ -87,32 +87,37 @@
 /* IMECO wall-display palette. Ported from mission-control-dashboard's tailwind.config.js —
    Tailwind v4 is CSS-first, so the tokens live here rather than in a config file.
    This dashboard runs dark-only (kiosk), so :root above is left as shadcn shipped it and
-   everything real happens in .dark, which index.html pins on <html>. */
+   everything real happens in .dark, which index.html pins on <html>.
+
+   The surface family is a dark teal-black rather than mission-control's navy. Same lightness
+   steps (background < card < surface < border), hue rotated to ~187° — so the depth ordering
+   and every contrast ratio carry over, only the cast changes. The green primary sits better
+   against teal than it did against navy. */
 .dark {
-    --background: #060c18;
+    --background: #071a1d;
     --foreground: #f1f5f9;
-    --card: #0a1628;
+    --card: #0c262b;
     --card-foreground: #f1f5f9;
-    --popover: #0a1628;
+    --popover: #0c262b;
     --popover-foreground: #f1f5f9;
     --primary: #22c55e;
-    --primary-foreground: #060c18;
-    --secondary: #0d1f35;
+    --primary-foreground: #071a1d;
+    --secondary: #103036;
     --secondary-foreground: #f1f5f9;
-    --muted: #0d1f35;
-    --muted-foreground: #94a3b8;
-    --accent: #0d1f35;
+    --muted: #103036;
+    --muted-foreground: #93aeb2;
+    --accent: #103036;
     --accent-foreground: #f1f5f9;
     --destructive: #f43f5e;
-    --border: #1a2d45;
-    --input: #1a2d45;
+    --border: #1b444c;
+    --input: #1b444c;
     --ring: rgba(34, 197, 94, 0.4);
 
     /* Categorical slots 1–6 of the validated data-viz palette, in documented order.
-       Verified against this dashboard's chart surface (--card, #0a1628):
-         node scripts/validate_palette.js "#3987e5,#d95926,#199e70,#c98500,#d55181,#008300" \
-              --mode dark --surface "#0a1628"   → ALL CHECKS PASS
-       Reordering these breaks colourblind separation. See src/data/channels.ts. */
+       Validated against the previous navy surface (#0a1628); since the timeline was removed
+       these are used only for the KPI "Top channel" accent, a single line of bold text, so
+       the surface change to #0c262b does not put them back in play as adjacent fills.
+       Re-run the validator before using them as fills again. See src/data/channels.ts. */
     --chart-1: #3987e5;
     --chart-2: #d95926;
     --chart-3: #199e70;
@@ -121,16 +126,16 @@
     --chart-6: #008300;
 
     /* Chart chrome */
-    --grid-line: rgba(26, 45, 69, 0.6);
-    --axis-ink: #94a3b8;
+    --grid-line: rgba(27, 68, 76, 0.6);
+    --axis-ink: #93aeb2;
 
-    --sidebar: #0a1628;
+    --sidebar: #0c262b;
     --sidebar-foreground: #f1f5f9;
     --sidebar-primary: #22c55e;
-    --sidebar-primary-foreground: #060c18;
-    --sidebar-accent: #0d1f35;
+    --sidebar-primary-foreground: #071a1d;
+    --sidebar-accent: #103036;
     --sidebar-accent-foreground: #f1f5f9;
-    --sidebar-border: #1a2d45;
+    --sidebar-border: #1b444c;
     --sidebar-ring: rgba(34, 197, 94, 0.4);
 }
 
@@ -154,15 +159,17 @@
    system. Kept as plain CSS rather than @utility — these are compositions, not variants. */
 @layer components {
   .card-glass {
-    background: rgba(10, 22, 40, 0.85);
-    border: 1px solid rgba(26, 45, 69, 0.8);
+    background: rgba(12, 38, 43, 0.85);
+    border: 1px solid rgba(27, 68, 76, 0.8);
     backdrop-filter: blur(12px);
   }
 
+  /* Same 40px lattice mission-control draws, re-tinted to the teal border colour so it
+     stays a whisper against the background rather than a drawn grid. */
   .bg-grid {
     background-image:
-      linear-gradient(rgba(26, 45, 69, 0.3) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(26, 45, 69, 0.3) 1px, transparent 1px);
+      linear-gradient(rgba(27, 68, 76, 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(27, 68, 76, 0.3) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 

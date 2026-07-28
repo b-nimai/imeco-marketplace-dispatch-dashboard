@@ -10,7 +10,7 @@ export const MID = '#ffeb84';
 export const HIGH = '#63be7b';
 
 /** Every filled cell is a light pastel, so ink is dark unconditionally. */
-export const INK = '#0b1220';
+export const INK = '#08181a';
 
 /**
  * Yellow sits at the row's MEDIAN, not the mid-point of its range — Excel's own

@@ -2,11 +2,17 @@
 //
 // COLOUR ORDER IS NOT COSMETIC. These are categorical slots 1–6 of the validated
 // data-viz palette, in their documented order, and the ordering IS the colourblind-safety
-// mechanism. Verified against this dashboard's own chart surface (#0a1628):
+// mechanism. Verified against the dashboard's then-current chart surface (#0a1628):
 //
 //   node scripts/validate_palette.js "#3987e5,#d95926,#199e70,#c98500,#d55181,#008300" \
 //        --mode dark --surface "#0a1628"
 //   → ALL CHECKS PASS (worst adjacent CVD ΔE 8.4 protan, normal-vision ΔE 19.3, all ≥3:1)
+//
+// Two things have changed since, and neither invalidates the ordering — but know them:
+//   • The timeline is gone, so nothing renders these as adjacent fills any more. The only
+//     consumer left is the KPI "Top channel" accent, one line of bold text.
+//   • The card surface moved from navy #0a1628 to teal #0c262b.
+// Re-run the validator against the current surface before using these as fills again.
 //
 // Brand-matching the hues (Meesho magenta, Blinkit yellow…) was tried and FAILS: it puts
 // magenta beside aqua, which collapses to ΔE 1.6 under deuteranopia. Do not reorder to

@@ -19,7 +19,7 @@ function Tile({
   return (
     // Two lines, not three: the note sits on the value's baseline rather than under it, which
     // is ~30px of wall display per tile handed back to the grid.
-    <Card size="sm" className="gap-0 py-2">
+    <Card size="sm" className="card-glass gap-0 bg-transparent py-2">
       <div className="px-3">
         <div className="eyebrow text-[10px]">{label}</div>
         <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">

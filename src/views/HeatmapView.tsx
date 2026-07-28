@@ -19,7 +19,11 @@ export function HeatmapView({ scope, showZero }: { scope: HeatmapScope; showZero
   }, [scope.rows, showZero]);
 
   return (
-    <Card className="h-full min-h-0 py-3">
+    // `bg-transparent` defeats Card's own `bg-card`; `card-glass` then supplies an 85% fill,
+    // so the page's lattice reads faintly through the grid the way mission-control's does.
+    // The sticky Product and Total cells stay fully opaque — they have to hide rows sliding
+    // underneath them.
+    <Card className="card-glass h-full min-h-0 bg-transparent py-3">
       <CardContent className="min-h-0 flex-1 overflow-hidden">
         <Heatmap scope={scope} rows={rows} />
       </CardContent>

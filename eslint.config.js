@@ -19,4 +19,11 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Vendored shadcn primitives. They export variant objects (buttonVariants,
+    // toggleVariants, …) alongside their components by design — that is upstream's shape,
+    // not ours to fix, and editing them would be undone by the next `shadcn add`.
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 ])

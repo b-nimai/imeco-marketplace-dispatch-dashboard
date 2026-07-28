@@ -37,11 +37,18 @@ function shadedCell(value: number, mid: number, max: number) {
   };
 }
 
-/** Wide enough for the longest display name (47 chars) without an ellipsis. */
-const NAME_W = 'w-[20rem] min-w-[20rem] max-w-[20rem]';
+/**
+ * 20rem is wide enough for the longest display name (47 chars) without an ellipsis. On a
+ * phone that is the entire viewport, which left no room at all for the data, so below `lg`
+ * the column narrows to 10rem and names fall back to their `truncate` + tooltip.
+ *
+ * The switch is at `lg`, not `md`: on a tablet the wide name column would eat 320 of ~700px
+ * and squeeze the channels to 49px, narrower than the 69px they get here.
+ */
+const NAME_W = 'w-[10rem] min-w-[10rem] max-w-[10rem] lg:w-[20rem] lg:min-w-[20rem] lg:max-w-[20rem]';
 const TOTAL_W = 'w-[5.5rem] min-w-[5.5rem]';
 /** Sticky offset for the Total column = the name column plus one border-spacing step. */
-const TOTAL_LEFT = 'left-[20.25rem]';
+const TOTAL_LEFT = 'left-[10.25rem] lg:left-[20.25rem]';
 
 interface Props {
   scope: HeatmapScope;
@@ -69,7 +76,13 @@ export function Heatmap({ scope, rows }: Props) {
           and the cells stopped being comparable at a glance. Fixed layout takes widths from
           the header row only: Product and Total are pinned below, and the 7 channels split
           what is left evenly. */}
-      <Table className="h-full table-fixed border-separate border-spacing-0.5">
+      {/* `min-w` is what makes this usable on a phone. Under `table-fixed` + `w-full` the
+          channel columns divide up whatever is left after the two pinned ones, which on a
+          narrow screen is nothing — they collapsed to zero width and the grid showed only
+          product names. A floor on the table width makes the container scroll horizontally
+          instead, with Product and Total pinned. It is inert on a desktop, where the table
+          is already far wider than this. */}
+      <Table className="h-full table-fixed border-separate border-spacing-0.5 min-w-[47rem]">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead

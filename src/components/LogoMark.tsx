@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-import logoVideo from '@/assets/imeco_logo_1.mp4';
+import logoVideo from '@/assets/imeco_logo_2.mp4';
+import { cn } from '@/lib/utils';
 
 /**
  * The animated IMECO wordmark.
@@ -17,29 +18,34 @@ import logoVideo from '@/assets/imeco_logo_1.mp4';
  *    screen` is what makes that black drop away against the dark header: screen leaves
  *    black untouched and keeps the light wordmark, so no letterbox shows.
  *
- * 3. THE MARK DRIFTS AS IT SETTLES. It reads clearly from about t=4s at 803×227 and eases
- *    down to 751×205 by the end. Measured per frame at 0.1s steps, filtering out the smoke
- *    by requiring a column to carry ≥10 bright pixels — a letter stroke does, a particle
- *    trail does not.
+ * 3. THE CLIP IS AN IN-AND-OUT, AND ENDS EMPTY. Particles blow in, the mark assembles by
+ *    t≈4s, holds dead still at 672×228 from t=4.6 to 6.8, then dissolves back into smoke —
+ *    the final frame carries no logo at all. Measured per frame at 0.2s steps, filtering
+ *    out the smoke by requiring a column to carry ≥10 bright pixels: a letter stroke does,
+ *    a particle trail does not.
  *
- *    So the crop is the UNION of those bounds rather than the final frame's: sized to the
- *    final frame, every earlier and slightly larger frame would have its outer letters
- *    sliced. The union means THE WORDMARK IS NEVER CUT, at any point in the loop, and the
- *    cost is only that at rest it sits at ~90% of the box height instead of filling it.
+ *    Two things follow. The crop is the UNION over the hold window (4.0–7.4s) rather than
+ *    any single frame, so the mark is never cut while it is legible. And the
+ *    reduced-motion path parks on HOLD_FRAME instead of the end, which would otherwise
+ *    leave an empty box.
  *
- *    The clip loops in full, all 10s. For the first few seconds the particle plume sweeps
- *    well outside this window and is clipped at its edges. That is smoke, not letterforms,
- *    and no crop that keeps the wordmark legible could contain it.
+ *    The clip loops in full, all 10s, so the mark is present for roughly four seconds of
+ *    every ten and the rest is smoke sweeping past. That is the asset's own rhythm; the
+ *    plume ranges far wider than any crop that keeps the wordmark legible could contain,
+ *    so it clips at the edges by design.
  */
 
 /**
- * Union of the wordmark's bounds across every frame from when it reads clearly (t≈4s) to the
- * end. Cropping to this is what guarantees no letter is ever clipped.
+ * Union of the wordmark's bounds across the hold window. Cropping to this is what
+ * guarantees no letter is ever clipped while the mark is up.
  *
- * Re-measure these if the source clip is replaced — they are specific to the file.
+ * RE-MEASURE THESE IF THE SOURCE CLIP IS REPLACED — they are specific to the file, and a
+ * swap silently mis-frames the logo otherwise.
  */
-const MARK = { x: 271, y: 238, w: 803, h: 227 };
+const MARK = { x: 342, y: 202, w: 680, h: 236 };
 const FRAME = { w: 1280, h: 720 };
+/** Mid-hold, where the mark is fully formed and stationary. */
+const HOLD_FRAME = 5.5;
 
 /**
  * Breathing room either side, in source pixels, so the mark is not flush against the crop.
@@ -64,23 +70,29 @@ const CROP = {
  * 43px is exactly as tall as the title block sitting next to it, which is what sets the
  * header's height — so the box fills the bar completely without making it one pixel taller.
  * Width then follows from the crop's own aspect rather than being chosen and cropped to.
+ *
+ * The box shrinks on phones (see BOX_CLASS), which is why the video is positioned in
+ * PERCENTAGES of the box below rather than pixels: the framing then follows whatever size
+ * the box happens to be, and there is only one set of numbers to keep correct.
  */
 const BOX_H = 43;
 const BOX_W = Math.round((BOX_H * CROP.w) / CROP.h);
+/** Same aspect at both sizes (3.19:1); the phone/tablet box is simply smaller. */
+const BOX_CLASS = 'h-[32px] w-[102px] lg:h-[43px] lg:w-[137px]';
 
 const scale = BOX_H / CROP.h;
-const videoW = FRAME.w * scale;
 const cropCentre = { x: CROP.x + CROP.w / 2, y: CROP.y + CROP.h / 2 };
-const offset = {
-  left: BOX_W / 2 - cropCentre.x * scale,
-  top: BOX_H / 2 - cropCentre.y * scale,
-};
+
+/** Video width as a percentage of the box, and its offset likewise — see note above. */
+const videoWidthPct = ((FRAME.w * scale) / BOX_W) * 100;
+const leftPct = ((BOX_W / 2 - cropCentre.x * scale) / BOX_W) * 100;
+const topPct = ((BOX_H / 2 - cropCentre.y * scale) / BOX_H) * 100;
 
 export function LogoMark({ syncing }: { syncing: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
 
   // The rest of the dashboard opts out of motion via CSS, which cannot reach a <video>.
-  // Skip straight to the frame it would have ended on.
+  // Park on the hold frame — NOT the end, which is smoke and would show an empty box.
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
@@ -89,7 +101,7 @@ export function LogoMark({ syncing }: { syncing: boolean }) {
     video.loop = false; // otherwise it restarts the moment anything resumes it
     video.pause();
     const settle = () => {
-      video.currentTime = video.duration;
+      video.currentTime = HOLD_FRAME;
     };
     if (video.readyState >= 1) settle();
     else video.addEventListener('loadedmetadata', settle, { once: true });
@@ -109,10 +121,7 @@ export function LogoMark({ syncing }: { syncing: boolean }) {
   }, [syncing]);
 
   return (
-    <span
-      className="relative block shrink-0 overflow-hidden"
-      style={{ width: BOX_W, height: BOX_H }}
-    >
+    <span className={cn('relative block shrink-0 overflow-hidden', BOX_CLASS)}>
       <video
         ref={ref}
         src={logoVideo}
@@ -124,9 +133,9 @@ export function LogoMark({ syncing }: { syncing: boolean }) {
         aria-hidden
         className="absolute max-w-none"
         style={{
-          width: videoW,
-          left: offset.left,
-          top: offset.top,
+          width: `${videoWidthPct}%`,
+          left: `${leftPct}%`,
+          top: `${topPct}%`,
           mixBlendMode: 'screen',
         }}
       />

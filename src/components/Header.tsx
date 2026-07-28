@@ -62,7 +62,9 @@ export function Header({
         </Button>
         <div className="hidden h-7 w-px bg-border sm:block" />
         <div>
-          <h1 className="text-sm font-black tracking-[0.2em] text-foreground uppercase sm:text-base">
+          {/* The wide tracking is what pushed the title onto two lines on a phone, taking
+              the header to 171px. Tightened below `sm` only. */}
+          <h1 className="text-sm font-black tracking-[0.08em] text-foreground uppercase sm:text-base sm:tracking-[0.2em]">
             Marketplace Dispatch
           </h1>
           <div className="mt-1 flex items-center gap-2">

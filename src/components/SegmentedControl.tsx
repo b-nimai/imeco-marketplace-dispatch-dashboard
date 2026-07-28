@@ -51,7 +51,11 @@ export function SegmentedControl<T extends string>({
         >
           {o.label}
           {o.hint && (
-            <span className="ml-1 font-medium tracking-normal normal-case opacity-60">
+            // Hidden on phones: the hints roughly double the strip's width and are the
+            // difference between the months fitting and running off the screen. The label
+            // alone still identifies the segment, and `aria-label` above keeps the hint for
+            // screen readers either way.
+            <span className="ml-1 hidden font-medium tracking-normal normal-case opacity-60 sm:inline">
               {o.hint}
             </span>
           )}
